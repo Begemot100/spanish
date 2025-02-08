@@ -10,35 +10,28 @@ from db import create_db, get_user_profile, create_user
 from test_self_vocabulary import start_test, handle_answer, handle_topic_selection, handle_vocabulary_action
 from vocabulary_menu import show_vocabulary_menu, generate_words
 
-# Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Загрузка переменных из файла .env
 load_dotenv()
 
-# Проверяем наличие ключа API в переменных окружения
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("API ключ OpenAI не найден. Убедитесь, что переменная окружения OPENAI_API_KEY задана.")
 
-# Загрузка ключа OpenAI
 openai.api_key = api_key
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
-# Функция для получения клавиатуры
 def get_base_keyboard():
     buttons = [[InlineKeyboardButton(text="Меню", callback_data="menu")]]
     return InlineKeyboardMarkup(buttons)
 
-# Обработчик команды /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         'Нажмите на кнопку "Меню", чтобы продолжить:',
         reply_markup=get_base_keyboard()
     )
 
-# Функция для отображения меню
 async def show_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
@@ -53,7 +46,6 @@ async def show_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = InlineKeyboardMarkup(buttons)
     await query.edit_message_text(text="Выберите опцию:", reply_markup=keyboard)
 
-# Обработчик профиля
 async def handle_profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
@@ -61,10 +53,8 @@ async def handle_profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user_id = query.from_user.id
     username = query.from_user.username or "unknown"
 
-    # Получаем профиль пользователя
     user_data = get_user_profile(user_id)
     if not user_data:
-        # Создаем нового пользователя, если его нет в базе
         create_user(user_id, username)
         user_data = (username, 'basic', 0, 0)
 
@@ -78,21 +68,18 @@ async def handle_profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     await query.edit_message_text(text=profile_info, reply_markup=get_base_keyboard())
 
-# Обработчик текстовых сообщений и кнопок
 async def handle_any_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         'Нажмите на кнопку "Меню", чтобы продолжить:',
         reply_markup=get_base_keyboard()
     )
 
-# Функция для отображения словаря пользователя
 async def show_dictionary(update, context):
     query = update.callback_query
     await query.answer()
 
     user_id = query.from_user.id
 
-    # Подключаемся к базе данных и извлекаем слова пользователя
     connection = sqlite3.connect("language_learning.db")
     cursor = connection.cursor()
     cursor.execute("SELECT spanish_word, russian_translation FROM dictionary WHERE user_id = ?", (user_id,))
@@ -109,17 +96,12 @@ async def show_dictionary(update, context):
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="🔙 Назад в меню", callback_data="menu")]])
     )
 
-# Регистрация обработчика в основном файле (bot.py)
-# application.add_handler(CallbackQueryHandler(show_dictionary, pattern="^dictionary$"))
 
-# Главная функция для запуска бота
 def main():
-    create_db()  # Инициализация базы данных
+    create_db()  
 
-    # Создаем приложение
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
-    # Регистрация обработчиков
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(show_menu, pattern="^menu$"))
     application.add_handler(CallbackQueryHandler(handle_profile, pattern="^profile$"))
@@ -129,11 +111,9 @@ def main():
     application.add_handler(CallbackQueryHandler(start_test, pattern="^check_self$"))
     application.add_handler(CallbackQueryHandler(handle_answer, pattern="^answer_"))
 
-    # Используем уникальные паттерны для обработки действий
     application.add_handler(CallbackQueryHandler(generate_words, pattern="^vocab_\\d+$"))
     application.add_handler(CallbackQueryHandler(show_dictionary, pattern="^dictionary$"))
 
-    # Запуск бота
     application.run_polling()
 
 
