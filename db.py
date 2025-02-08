@@ -1,6 +1,5 @@
 import sqlite3
 
-# Создание базы данных и таблиц
 def create_db():
     connection = sqlite3.connect('language_learning.db')
     cursor = connection.cursor()
@@ -19,7 +18,6 @@ def create_db():
     connection.commit()
     connection.close()
 
-# Получение профиля пользователя
 def get_user_profile(user_id):
     connection = sqlite3.connect('language_learning.db')
     cursor = connection.cursor()
@@ -29,7 +27,6 @@ def get_user_profile(user_id):
     connection.close()
     return user_data
 
-# Создание нового пользователя, если его нет в базе
 def create_user(user_id, username):
     connection = sqlite3.connect('language_learning.db')
     cursor = connection.cursor()
